@@ -36,6 +36,9 @@ class Graph:
         self.g = g
         self.index = index
 
+    def get_graph(self):
+        return self.g
+
     def guide(self, sources: List[str], cutoff: int = 2):
         target_indexes = []
         for s in sources:

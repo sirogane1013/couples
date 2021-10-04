@@ -1,4 +1,5 @@
 import sys
+import time
 from typing import List
 
 import git
