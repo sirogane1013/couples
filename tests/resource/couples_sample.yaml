@@ -1,0 +1,33 @@
+hercules:
+  version: 10
+  hash: 6959c0d102ed485929385d87c56a9910551ad0b1
+  repository: sample
+  begin_unix_time: 1631862396
+  end_unix_time: 1631862477
+  commits: 3
+  run_time: 24
+Couples:
+  files_coocc:
+    index:
+      - "A"
+      - "B"
+      - "C"
+    lines:
+      - 1
+      - 1
+      - 2
+    matrix:
+      - {0: 2, 1: 1, 2: 2}
+      - {0: 1, 1: 2, 2: 2}
+      - {0: 2, 1: 2, 2: 3}
+  people_coocc:
+    index:
+      - "sirogane1013|stlouis.route66@gmail.com"
+    matrix:
+      - {0: 7}
+      - {}
+    author_files:
+      - "sirogane1013|stlouis.route66@gmail.com":
+        - "A"
+        - "B"
+        - "C"
