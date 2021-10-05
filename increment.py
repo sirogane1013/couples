@@ -68,12 +68,14 @@ def increment(repo: git.Repo, origin_hex: str, index: List[str], coocc: csr_matr
 
 def get_child(repo: git.Repo, hexsha: str) \
         -> git.Commit:
-    for c in repo.iter_commits():
+    c = repo.commit()
+    while True:
         if len(c.parents) == 0:
             print("Commit not found: {}".format(hexsha))
             sys.exit(1)
         if c.parents[0].hexsha.startswith(hexsha):
             return c
+        c = c.parents[0]
 
 
 def sort_coocc(index: List[str], coocc: csr_matrix) \
