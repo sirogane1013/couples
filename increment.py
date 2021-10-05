@@ -1,5 +1,4 @@
 import sys
-import time
 from typing import List
 
 import git
@@ -8,16 +7,9 @@ from scipy.sparse import csr_matrix, coo_matrix
 
 def increment(repo: git.Repo, origin_hex: str, index: List[str], coocc: csr_matrix) \
         -> (List[str], csr_matrix, str):
-    diffs = None
-    hexsha = ""
-    for c in repo.iter_commits():
-        if len(c.parents) == 0:
-            print("Commit not found: {}".format(origin_hex))
-            sys.exit(1)
-        if c.parents[0].hexsha.startswith(origin_hex):
-            diffs = c.parents[0].diff(c)
-            hexsha = c.hexsha
-            break
+    child = get_child(repo, origin_hex)
+    diffs = child.parents[0].diff(child)
+    hexsha = child.hexsha
 
     added_files = []
     modified_files = []
@@ -72,6 +64,16 @@ def increment(repo: git.Repo, origin_hex: str, index: List[str], coocc: csr_matr
                                    shape=[len(new_index), len(new_index)])
     r_index, r_coocc = sort_coocc(new_index, incremented_coocc)
     return r_index, r_coocc, hexsha
+
+
+def get_child(repo: git.Repo, hexsha: str) \
+        -> git.Commit:
+    for c in repo.iter_commits():
+        if len(c.parents) == 0:
+            print("Commit not found: {}".format(hexsha))
+            sys.exit(1)
+        if c.parents[0].hexsha.startswith(hexsha):
+            return c
 
 
 def sort_coocc(index: List[str], coocc: csr_matrix) \

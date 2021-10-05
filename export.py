@@ -9,8 +9,7 @@ import scipy
 from tqdm import tqdm
 from networkx.readwrite import json_graph
 
-from graph import Graph
-from increment import increment
+from increment import increment, get_child
 from reader import read_input
 
 
@@ -36,6 +35,10 @@ def parse_args():
         "-d", "--destination", type=str, default="./data",
         help="Destination of output."
     )
+    parser.add_argument(
+        "-o", "--overwrite", action='store_true',
+        help="Overwrite if data exists."
+    )
     args = parser.parse_args()
     return args
 
@@ -48,17 +51,23 @@ def main():
     index, coocc = reader.get_files_coocc()
     repo = git.Repo(args.repository)
     hexsha = args.hexsha
+    commit = repo.commit(hexsha)
     for _ in tqdm(range(args.iteration)):
         path = dest_prefix + "/" + hexsha
-        os.makedirs(path, exist_ok=True)
-        with open(path + "/index.pkl", mode='wb') as f:
-            export_index(f, index)
-        with open(path + "/matrix.npz", mode='wb') as f:
-            export_matrix(f, coocc)
-        # graph = Graph(index, coocc).get_graph()
-        # with open(path + "/graph.json", mode='w') as f:
-        #     export_graph(f, graph)
-        index, coocc, hexsha = increment(repo, hexsha, index, coocc)
+        if args.overwrite or not os.path.exists(path):
+            os.makedirs(path, exist_ok=True)
+            with open(path + "/index.pkl", mode='wb') as f:
+                export_index(f, index)
+            with open(path + "/matrix.npz", mode='wb') as f:
+                export_matrix(f, coocc)
+            index, coocc, hexsha = increment(repo, hexsha, index, coocc)
+        else:
+            with open(path + "/index.pkl", mode='rb') as f:
+                index = pickle.load(f)
+            with open(path + "/matrix.npz", mode='rb') as f:
+                coocc = scipy.sparse.load_npz(f)
+            commit = get_child(repo, hexsha)
+            hexsha = commit.hexsha
 
 
 def export_index(f, index):
