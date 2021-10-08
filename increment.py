@@ -27,22 +27,22 @@ def increment(repo: git.Repo, origin_hex: str, index: List[str], coocc: csr_matr
             renamed_files_a.append(d.a_path)
             renamed_files_b.append(d.b_path)
     new_index = index + added_files
-    new_index = list(filter(lambda x: x not in deleted_files, new_index))
+    new_index = [e for e in new_index if e not in deleted_files]
     c = coo_matrix(coocc)
-    row = []
-    col = []
-    data = []
+    row = [new_index.index(index[e]) for i, e in enumerate(c.row) if
+           not (index[c.row[i]] in deleted_files or index[c.col[i]] in deleted_files)]
+    col = [new_index.index(index[e]) for i, e in enumerate(c.col) if
+           not (index[c.row[i]] in deleted_files or index[c.col[i]] in deleted_files)]
+    data = [e for i, e in enumerate(c.data) if
+            not (index[c.row[i]] in deleted_files or index[c.col[i]] in deleted_files)]
     # modify
-    for i, j, v in zip(c.row, c.col, c.data):
-        if index[i] in deleted_files or index[j] in deleted_files:
-            continue
-        row.append(new_index.index(index[i]))
-        col.append(new_index.index(index[j]))
-        if (index[i] in modified_files or index[i] in renamed_files_a) and (
-                index[j] in modified_files or index[j] in renamed_files_a):
-            data.append(v + 1)
-        else:
-            data.append(v)
+    # duplicate indices are implicitly summed
+    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.coo_matrix.html
+    for one in set(modified_files) | set(renamed_files_a):
+        for other in set(modified_files) | set(renamed_files_a):
+            row.append(new_index.index(one))
+            col.append(new_index.index(other))
+            data.append(1)
     # add
     for i, _ in enumerate(added_files):
         idx = len(index) - len(deleted_files) + i
