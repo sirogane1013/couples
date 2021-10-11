@@ -1,0 +1,4 @@
+[submodule "tests/resource/repo4test"]
+	path = tests/resource/repo4test
+	url = https://github.com/sirogane1013/repo4test.git
+	branch = main:

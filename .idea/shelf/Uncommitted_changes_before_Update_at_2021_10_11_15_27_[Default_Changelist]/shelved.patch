@@ -1,0 +1,350 @@
+Index: tests/test_increment.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import unittest\r\n\r\nimport git\r\nfrom scipy.sparse import csr_matrix\r\n\r\nfrom increment import increment, sort_coocc\r\n\r\n\r\nclass IncrementTest(unittest.TestCase):\r\n    def setUp(self):\r\n        super().setUp()\r\n\r\n    def test_increment(self):\r\n        repo = git.Repo(\"./resource/test_repo\")\r\n        origin_hex = \"2205a5f44fa0a450c978a600d478935f159d6e27\"\r\n        in_index = [\"A\", \"B\"]\r\n        in_mat = csr_matrix([\r\n            [1, 1],\r\n            [1, 1],\r\n        ])\r\n        exp_idx = [\"A\", \"B\"]\r\n        exp_mat = csr_matrix([\r\n            [2, 2],\r\n            [2, 2],\r\n        ])\r\n        exp_hex = \"0f0a9bb941f5443392ad659d113205ab1ea3ff71\"\r\n        act_idx, act_mat, act_hex = increment(repo, origin_hex, in_index, in_mat)\r\n        self.assertEqual(exp_idx, act_idx)\r\n        self.assertTrue((exp_mat != act_mat).nnz == 0)\r\n        self.assertEqual(exp_hex, act_hex)\r\n\r\n        exp_idx = [\"A\", \"B\", \"C\"]\r\n        exp_mat = csr_matrix([\r\n            [2, 2, 0],\r\n            [2, 2, 0],\r\n            [0, 0, 1],\r\n        ])\r\n        exp_hex = \"f69f5b8a351a25013834cb4a3893a2f94aa9f718\"\r\n        act_idx, act_mat, act_hex = increment(repo, act_hex, act_idx, act_mat)\r\n        self.assertEqual(exp_idx, act_idx)\r\n        self.assertTrue((exp_mat != act_mat).nnz == 0)\r\n        self.assertEqual(exp_hex, act_hex)\r\n\r\n        exp_idx = [\"B\", \"C\", \"RA\"]\r\n        exp_mat = csr_matrix([\r\n            [2, 0, 2],\r\n            [0, 1, 0],\r\n            [2, 0, 3],\r\n        ])\r\n        exp_hex = \"cc332a3b870dec2c6015b27ab02b63ed55acd5f2\"\r\n        act_idx, act_mat, act_hex = increment(repo, act_hex, act_idx, act_mat)\r\n        self.assertEqual(exp_idx, act_idx)\r\n        self.assertTrue((exp_mat != act_mat).nnz == 0)\r\n        self.assertEqual(exp_hex, act_hex)\r\n\r\n        exp_idx = [\"B\", \"RA\"]\r\n        exp_mat = csr_matrix([\r\n            [2, 2],\r\n            [2, 3],\r\n        ])\r\n        exp_hex = \"7ecc52433843041a1d6c8747191c33e9581003af\"\r\n        act_idx, act_mat, act_hex = increment(repo, act_hex, act_idx, act_mat)\r\n        self.assertEqual(exp_idx, act_idx)\r\n        self.assertTrue((exp_mat != act_mat).nnz == 0)\r\n        self.assertEqual(exp_hex, act_hex)\r\n\r\n        exp_idx = [\"D\", \"RA\", \"RB\"]\r\n        exp_mat = csr_matrix([\r\n            [1, 1, 1],\r\n            [1, 4, 3],\r\n            [1, 3, 3],\r\n        ])\r\n        exp_hex = \"ab0755128e8caf69189056a2c5832e597d93e670\"\r\n        act_idx, act_mat, act_hex = increment(repo, act_hex, act_idx, act_mat)\r\n        self.assertEqual(exp_idx, act_idx)\r\n        self.assertTrue((exp_mat != act_mat).nnz == 0)\r\n        self.assertEqual(exp_hex, act_hex)\r\n\r\n    def test_sort_coocc(self):\r\n        in_idx = [\"B\", \"C\", \"A\"]\r\n        in_mat = csr_matrix([\r\n            [2, 1, 0],\r\n            [1, 2, 2],\r\n            [0, 2, 3],\r\n        ])\r\n        exp_idx = [\"A\", \"B\", \"C\"]\r\n        exp_mat = csr_matrix([\r\n            [3, 0, 2],\r\n            [0, 2, 1],\r\n            [2, 1, 2],\r\n        ])\r\n        act_idx, act_mat = sort_coocc(in_idx, in_mat)\r\n\r\n        self.assertEqual(exp_idx, act_idx)\r\n        # exp_mat == act_mat\r\n        #   for efficiency issue, we should use below expression\r\n        #   https://stackoverflow.com/questions/30685024\r\n        self.assertTrue((exp_mat != act_mat).nnz == 0)\r\n\r\n\r\nif __name__ == '__main__':\r\n    unittest.main()\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/tests/test_increment.py b/tests/test_increment.py
+--- a/tests/test_increment.py	(revision e3b74bcb2f2c8d27247ef9c629351b35be01a2ed)
++++ b/tests/test_increment.py	(date 1633600029140)
+@@ -1,4 +1,5 @@
+ import unittest
++from typing import List
+ 
+ import git
+ from scipy.sparse import csr_matrix
+@@ -11,70 +12,88 @@
+         super().setUp()
+ 
+     def test_increment(self):
+-        repo = git.Repo("./resource/test_repo")
+-        origin_hex = "2205a5f44fa0a450c978a600d478935f159d6e27"
+-        in_index = ["A", "B"]
+-        in_mat = csr_matrix([
++        repo: git.Repo = git.Repo("./resource/repo4test")
++        hexsha: str = "0a48a702ed292db1ad7ef878fc8dfbbe6c113639"
++        index: List[str] = ["fileA", "fileB"]
++        matrix: csr_matrix = csr_matrix([
+             [1, 1],
+             [1, 1],
+         ])
+-        exp_idx = ["A", "B"]
+-        exp_mat = csr_matrix([
+-            [2, 2],
+-            [2, 2],
+-        ])
+-        exp_hex = "0f0a9bb941f5443392ad659d113205ab1ea3ff71"
+-        act_idx, act_mat, act_hex = increment(repo, origin_hex, in_index, in_mat)
+-        self.assertEqual(exp_idx, act_idx)
+-        self.assertTrue((exp_mat != act_mat).nnz == 0)
+-        self.assertEqual(exp_hex, act_hex)
+-
+-        exp_idx = ["A", "B", "C"]
+-        exp_mat = csr_matrix([
+-            [2, 2, 0],
+-            [2, 2, 0],
+-            [0, 0, 1],
+-        ])
+-        exp_hex = "f69f5b8a351a25013834cb4a3893a2f94aa9f718"
+-        act_idx, act_mat, act_hex = increment(repo, act_hex, act_idx, act_mat)
+-        self.assertEqual(exp_idx, act_idx)
+-        self.assertTrue((exp_mat != act_mat).nnz == 0)
+-        self.assertEqual(exp_hex, act_hex)
+-
+-        exp_idx = ["B", "C", "RA"]
+-        exp_mat = csr_matrix([
+-            [2, 0, 2],
+-            [0, 1, 0],
+-            [2, 0, 3],
+-        ])
+-        exp_hex = "cc332a3b870dec2c6015b27ab02b63ed55acd5f2"
+-        act_idx, act_mat, act_hex = increment(repo, act_hex, act_idx, act_mat)
+-        self.assertEqual(exp_idx, act_idx)
+-        self.assertTrue((exp_mat != act_mat).nnz == 0)
+-        self.assertEqual(exp_hex, act_hex)
+-
+-        exp_idx = ["B", "RA"]
+-        exp_mat = csr_matrix([
+-            [2, 2],
+-            [2, 3],
+-        ])
+-        exp_hex = "7ecc52433843041a1d6c8747191c33e9581003af"
+-        act_idx, act_mat, act_hex = increment(repo, act_hex, act_idx, act_mat)
+-        self.assertEqual(exp_idx, act_idx)
+-        self.assertTrue((exp_mat != act_mat).nnz == 0)
+-        self.assertEqual(exp_hex, act_hex)
+-
+-        exp_idx = ["D", "RA", "RB"]
+-        exp_mat = csr_matrix([
+-            [1, 1, 1],
+-            [1, 4, 3],
+-            [1, 3, 3],
+-        ])
+-        exp_hex = "ab0755128e8caf69189056a2c5832e597d93e670"
+-        act_idx, act_mat, act_hex = increment(repo, act_hex, act_idx, act_mat)
+-        self.assertEqual(exp_idx, act_idx)
+-        self.assertTrue((exp_mat != act_mat).nnz == 0)
+-        self.assertEqual(exp_hex, act_hex)
++        index, matrix, hexsha = \
++            self.increment_and_assert(repo, index, matrix, hexsha,
++                                      ["fileA", "fileB", "fileC"],
++                                      csr_matrix([
++                                          [2, 1, 1],
++                                          [1, 1, 0],
++                                          [1, 0, 1],
++                                      ]),
++                                      "8652aaa2ccb537e0f47432061a75c3aeca71a311")
++        index, matrix, hexsha = \
++            self.increment_and_assert(repo, index, matrix, hexsha,
++                                      ["fileAR", "fileB", "fileC", "fileD"],
++                                      csr_matrix([
++                                          [3, 1, 1, 1],
++                                          [1, 1, 0, 0],
++                                          [1, 0, 1, 0],
++                                          [1, 0, 0, 1],
++                                      ]),
++                                      "8f5b3ad22905e4c92a4d73b2791aed76d4afd68e")
++        index, matrix, hexsha = \
++            self.increment_and_assert(repo, index, matrix, hexsha,
++                                      ["fileAR", "fileC", "fileD", "fileE"],
++                                      csr_matrix([
++                                          [3, 1, 1, 0],
++                                          [1, 1, 0, 0],
++                                          [1, 0, 1, 0],
++                                          [0, 0, 0, 1],
++                                      ]),
++                                      "d0e718916df15cbcb6a474815a6346028b6f9a2b")
++        index, matrix, hexsha = \
++            self.increment_and_assert(repo, index, matrix, hexsha,
++                                      ["fileAR", "fileC", "fileD", "fileE"],
++                                      csr_matrix([
++                                          [4, 2, 1, 0],
++                                          [2, 2, 0, 0],
++                                          [1, 0, 1, 0],
++                                          [0, 0, 0, 1],
++                                      ]),
++                                      "be65bc0dc0390cc07cd08bfbb72fe40710699224")
++        index, matrix, hexsha = \
++            self.increment_and_assert(repo, index, matrix, hexsha,
++                                      ["fileAR", "fileCR", "fileD", "fileE"],
++                                      csr_matrix([
++                                          [5, 3, 1, 0],
++                                          [3, 3, 0, 0],
++                                          [1, 0, 1, 0],
++                                          [0, 0, 0, 1],
++                                      ]),
++                                      "f4e1f461184ceacb75ed80268e6aff4995493644")
++        index, matrix, hexsha = \
++            self.increment_and_assert(repo, index, matrix, hexsha,
++                                      ["fileAR", "fileCR", "fileE"],
++                                      csr_matrix([
++                                          [6, 3, 0],
++                                          [3, 3, 0],
++                                          [0, 0, 1],
++                                      ]),
++                                      "510193339b5d246abe98f75dc157637d20537995")
++        index, matrix, hexsha = \
++            self.increment_and_assert(repo, index, matrix, hexsha,
++                                      ["fileARR", "fileCR", "fileER"],
++                                      csr_matrix([
++                                          [7, 3, 1],
++                                          [3, 3, 0],
++                                          [1, 0, 2],
++                                      ]),
++                                      "9c581e105a348188fabd4eea8753a6263dee73da")
++        index, matrix, hexsha = \
++            self.increment_and_assert(repo, index, matrix, hexsha,
++                                      ["fileARRR", "fileER"],
++                                      csr_matrix([
++                                          [8, 1],
++                                          [1, 2],
++                                      ]),
++                                      "14aea80b915d6da1d330057e5666768c26ffb2e6")
+ 
+     def test_sort_coocc(self):
+         in_idx = ["B", "C", "A"]
+@@ -96,6 +115,16 @@
+         #   for efficiency issue, we should use below expression
+         #   https://stackoverflow.com/questions/30685024
+         self.assertTrue((exp_mat != act_mat).nnz == 0)
++
++    def increment_and_assert(self, repo: git.Repo,
++                             in_index: List[str], in_mat: csr_matrix, in_hex: str,
++                             exp_idx: List[str], exp_mat: csr_matrix, exp_hex: str) \
++            -> (List[str], csr_matrix, str):
++        act_idx, act_mat, act_hex = increment(repo, in_hex, in_index, in_mat)
++        self.assertEqual(exp_idx, act_idx)
++        self.assertTrue((exp_mat != act_mat).nnz == 0)
++        self.assertEqual(exp_hex, act_hex)
++        return act_idx, act_mat, act_hex
+ 
+ 
+ if __name__ == '__main__':
+Index: increment.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import sys\r\nfrom typing import List\r\n\r\nimport git\r\nfrom scipy.sparse import csr_matrix, coo_matrix\r\n\r\n\r\ndef increment(repo: git.Repo, origin_hex: str, index: List[str], coocc: csr_matrix) \\\r\n        -> (List[str], csr_matrix, str):\r\n    child = get_child(repo, origin_hex)\r\n    diffs = child.parents[0].diff(child)\r\n    hexsha = child.hexsha\r\n\r\n    added_files = []\r\n    modified_files = []\r\n    deleted_files = []\r\n    renamed_files_a = []\r\n    renamed_files_b = []\r\n    for d in diffs:\r\n        if d.change_type == 'A':\r\n            added_files.append(d.a_path)\r\n        elif d.change_type == 'M':\r\n            modified_files.append(d.a_path)\r\n        elif d.change_type == 'D':\r\n            deleted_files.append(d.a_path)\r\n        elif d.change_type == 'R':\r\n            renamed_files_a.append(d.a_path)\r\n            renamed_files_b.append(d.b_path)\r\n    new_index = index + added_files\r\n    new_index = list(filter(lambda x: x not in deleted_files, new_index))\r\n    c = coo_matrix(coocc)\r\n    row = []\r\n    col = []\r\n    data = []\r\n    # modify\r\n    for i, j, v in zip(c.row, c.col, c.data):\r\n        if index[i] in deleted_files or index[j] in deleted_files:\r\n            continue\r\n        row.append(new_index.index(index[i]))\r\n        col.append(new_index.index(index[j]))\r\n        if (index[i] in modified_files or index[i] in renamed_files_a) and (\r\n                index[j] in modified_files or index[j] in renamed_files_a):\r\n            data.append(v + 1)\r\n        else:\r\n            data.append(v)\r\n    # add\r\n    for i, _ in enumerate(added_files):\r\n        idx = len(index) - len(deleted_files) + i\r\n        row.append(idx)\r\n        col.append(idx)\r\n        data.append(1)\r\n        for f in set(modified_files) | set(renamed_files_a):\r\n            row.append(new_index.index(f))\r\n            col.append(idx)\r\n            data.append(1)\r\n            row.append(idx)\r\n            col.append(new_index.index(f))\r\n            data.append(1)\r\n    # rename\r\n    for ra, rb in zip(renamed_files_a, renamed_files_b):\r\n        new_index[new_index.index(ra)] = rb\r\n\r\n    incremented_coocc = csr_matrix((data, (row, col)),\r\n                                   shape=[len(new_index), len(new_index)])\r\n    r_index, r_coocc = sort_coocc(new_index, incremented_coocc)\r\n    return r_index, r_coocc, hexsha\r\n\r\n\r\ndef get_child(repo: git.Repo, hexsha: str) \\\r\n        -> git.Commit:\r\n    c = repo.commit()\r\n    while True:\r\n        if len(c.parents) == 0:\r\n            print(\"Commit not found: {}\".format(hexsha))\r\n            sys.exit(1)\r\n        if c.parents[0].hexsha.startswith(hexsha):\r\n            return c\r\n        c = c.parents[0]\r\n\r\n\r\ndef sort_coocc(index: List[str], coocc: csr_matrix) \\\r\n        -> (List[str], csr_matrix):\r\n    sorted_index = sorted(index)\r\n\r\n    def convert_index(from_i):\r\n        return sorted_index.index(index[from_i])\r\n\r\n    c = coo_matrix(coocc)\r\n    row = []\r\n    col = []\r\n    data = []\r\n    for i, j, v in zip(c.row, c.col, c.data):\r\n        row.append(convert_index(i))\r\n        col.append(convert_index(j))\r\n        data.append(v)\r\n    sorted_coocc = csr_matrix((data, (row, col)), shape=[len(index), len(index)])\r\n\r\n    return sorted_index, sorted_coocc\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/increment.py b/increment.py
+--- a/increment.py	(revision e3b74bcb2f2c8d27247ef9c629351b35be01a2ed)
++++ b/increment.py	(date 1633599816225)
+@@ -29,20 +29,22 @@
+     new_index = index + added_files
+     new_index = list(filter(lambda x: x not in deleted_files, new_index))
+     c = coo_matrix(coocc)
+-    row = []
+-    col = []
+-    data = []
++    # set new index
++    # if original is deleted, then skip
++    row = [new_index.index(index[e]) for i, e in enumerate(c.row)
++           if not (index[c.row[i]] in deleted_files or index[c.col[i]] in deleted_files)]
++    col = [new_index.index(index[e]) for i, e in enumerate(c.col)
++           if not (index[c.row[i]] in deleted_files or index[c.col[i]] in deleted_files)]
++    data = [e for i, e in enumerate(c.data)
++            if not (index[c.row[i]] in deleted_files or index[c.col[i]] in deleted_files)]
+     # modify
+-    for i, j, v in zip(c.row, c.col, c.data):
+-        if index[i] in deleted_files or index[j] in deleted_files:
+-            continue
+-        row.append(new_index.index(index[i]))
+-        col.append(new_index.index(index[j]))
+-        if (index[i] in modified_files or index[i] in renamed_files_a) and (
+-                index[j] in modified_files or index[j] in renamed_files_a):
+-            data.append(v + 1)
+-        else:
+-            data.append(v)
++    # duplicated indices are summed
++    # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.coo_matrix.html
++    for one in set(modified_files) | set(renamed_files_a):
++        for other in set(modified_files) | set(renamed_files_a):
++            row.append(new_index.index(one))
++            col.append(new_index.index(other))
++            data.append(1)
+     # add
+     for i, _ in enumerate(added_files):
+         idx = len(index) - len(deleted_files) + i
+@@ -62,6 +64,7 @@
+ 
+     incremented_coocc = csr_matrix((data, (row, col)),
+                                    shape=[len(new_index), len(new_index)])
++    incremented_coocc.sum_duplicates()
+     r_index, r_coocc = sort_coocc(new_index, incremented_coocc)
+     return r_index, r_coocc, hexsha
+ 
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"6734fdcb-a0a8-4e76-9045-751b4616ac47\" name=\"Default Changelist\" comment=\"\">\r\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\r\n      <change beforePath=\"$PROJECT_DIR$/increment.py\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/increment.py\" afterDir=\"false\" />\r\n    </list>\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"FileTemplateManagerImpl\">\r\n    <option name=\"RECENT_TEMPLATES\">\r\n      <list>\r\n        <option value=\"Python Unit Test\" />\r\n        <option value=\"Python Script\" />\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"ProjectId\" id=\"1xcJXfl1y9UkIbpP0yQmcLcESsp\" />\r\n  <component name=\"ProjectLevelVcsManager\" settingsEditedManually=\"true\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\">\r\n    <property name=\"DatabaseDriversLRU\" value=\"sqlite\" />\r\n    <property name=\"RunOnceActivity.OpenProjectViewOnStart\" value=\"true\" />\r\n    <property name=\"RunOnceActivity.ShowReadmeOnStart\" value=\"true\" />\r\n    <property name=\"SHARE_PROJECT_CONFIGURATION_FILES\" value=\"true\" />\r\n    <property name=\"WebServerToolWindowFactoryState\" value=\"false\" />\r\n    <property name=\"last_opened_file_path\" value=\"$PROJECT_DIR$\" />\r\n    <property name=\"node.js.detected.package.eslint\" value=\"true\" />\r\n    <property name=\"node.js.detected.package.tslint\" value=\"true\" />\r\n    <property name=\"node.js.path.for.package.eslint\" value=\"project\" />\r\n    <property name=\"node.js.path.for.package.tslint\" value=\"project\" />\r\n    <property name=\"node.js.selected.package.eslint\" value=\"(autodetect)\" />\r\n    <property name=\"node.js.selected.package.tslint\" value=\"(autodetect)\" />\r\n    <property name=\"settings.editor.selected.configurable\" value=\"preferences.lookFeel\" />\r\n  </component>\r\n  <component name=\"RunManager\" selected=\"Python.export_graph\">\r\n    <configuration default=\"true\" type=\"PythonConfigurationType\" factoryName=\"Python\">\r\n      <module name=\"couples\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"false\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"true\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"export_graph\" type=\"PythonConfigurationType\" factoryName=\"Python\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"couples\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <envs>\r\n        <env name=\"PYTHONUNBUFFERED\" value=\"1\" />\r\n      </envs>\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\r\n      <option name=\"SCRIPT_NAME\" value=\"$PROJECT_DIR$/export_graph.py\" />\r\n      <option name=\"PARAMETERS\" value=\"\" />\r\n      <option name=\"SHOW_COMMAND_LINE\" value=\"false\" />\r\n      <option name=\"EMULATE_TERMINAL\" value=\"false\" />\r\n      <option name=\"MODULE_MODE\" value=\"false\" />\r\n      <option name=\"REDIRECT_INPUT\" value=\"false\" />\r\n      <option name=\"INPUT_FILE\" value=\"\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"Unittests for test_graph.MyTestCase.test_guide\" type=\"tests\" factoryName=\"Unittests\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"couples\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/tests\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\r\n      <option name=\"_new_additionalArguments\" value=\"&quot;&quot;\" />\r\n      <option name=\"_new_target\" value=\"&quot;test_graph.MyTestCase.test_guide&quot;\" />\r\n      <option name=\"_new_targetType\" value=\"&quot;PYTHON&quot;\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"Unittests for test_increment.IncrementTest.test_increment\" type=\"tests\" factoryName=\"Unittests\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"couples\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/tests\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\r\n      <option name=\"_new_additionalArguments\" value=\"&quot;&quot;\" />\r\n      <option name=\"_new_target\" value=\"&quot;test_increment.IncrementTest.test_increment&quot;\" />\r\n      <option name=\"_new_targetType\" value=\"&quot;PYTHON&quot;\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"Unittests for test_increment.IncrementTest.test_sort_coocc\" type=\"tests\" factoryName=\"Unittests\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"couples\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/tests\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\r\n      <option name=\"_new_additionalArguments\" value=\"&quot;&quot;\" />\r\n      <option name=\"_new_target\" value=\"&quot;test_increment.IncrementTest.test_sort_coocc&quot;\" />\r\n      <option name=\"_new_targetType\" value=\"&quot;PYTHON&quot;\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <configuration name=\"Unittests for test_reader.ReaderTest\" type=\"tests\" factoryName=\"Unittests\" temporary=\"true\" nameIsGenerated=\"true\">\r\n      <module name=\"couples\" />\r\n      <option name=\"INTERPRETER_OPTIONS\" value=\"\" />\r\n      <option name=\"PARENT_ENVS\" value=\"true\" />\r\n      <option name=\"SDK_HOME\" value=\"\" />\r\n      <option name=\"WORKING_DIRECTORY\" value=\"$PROJECT_DIR$/tests\" />\r\n      <option name=\"IS_MODULE_SDK\" value=\"true\" />\r\n      <option name=\"ADD_CONTENT_ROOTS\" value=\"true\" />\r\n      <option name=\"ADD_SOURCE_ROOTS\" value=\"true\" />\r\n      <EXTENSION ID=\"PythonCoverageRunConfigurationExtension\" runner=\"coverage.py\" />\r\n      <option name=\"_new_additionalArguments\" value=\"&quot;&quot;\" />\r\n      <option name=\"_new_target\" value=\"&quot;test_reader.ReaderTest&quot;\" />\r\n      <option name=\"_new_targetType\" value=\"&quot;PYTHON&quot;\" />\r\n      <method v=\"2\" />\r\n    </configuration>\r\n    <recent_temporary>\r\n      <list>\r\n        <item itemvalue=\"Python.export_graph\" />\r\n        <item itemvalue=\"Python tests.Unittests for test_graph.MyTestCase.test_guide\" />\r\n        <item itemvalue=\"Python tests.Unittests for test_increment.IncrementTest.test_increment\" />\r\n        <item itemvalue=\"Python tests.Unittests for test_increment.IncrementTest.test_sort_coocc\" />\r\n        <item itemvalue=\"Python tests.Unittests for test_reader.ReaderTest\" />\r\n      </list>\r\n    </recent_temporary>\r\n  </component>\r\n  <component name=\"ServiceViewManager\">\r\n    <option name=\"viewStates\">\r\n      <list>\r\n        <serviceView>\r\n          <treeState>\r\n            <expand />\r\n            <select />\r\n          </treeState>\r\n        </serviceView>\r\n      </list>\r\n    </option>\r\n  </component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"project-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"SvnConfiguration\">\r\n    <configuration />\r\n  </component>\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"6734fdcb-a0a8-4e76-9045-751b4616ac47\" name=\"Default Changelist\" comment=\"\" />\r\n      <created>1630648483823</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1630648483823</updated>\r\n      <workItem from=\"1630648485100\" duration=\"3441000\" />\r\n      <workItem from=\"1631574827841\" duration=\"54000\" />\r\n      <workItem from=\"1631709333353\" duration=\"7743000\" />\r\n      <workItem from=\"1631948999040\" duration=\"609000\" />\r\n      <workItem from=\"1632015770470\" duration=\"5456000\" />\r\n      <workItem from=\"1632121430612\" duration=\"1787000\" />\r\n      <workItem from=\"1632382427512\" duration=\"7674000\" />\r\n      <workItem from=\"1632643055911\" duration=\"2408000\" />\r\n      <workItem from=\"1632815763115\" duration=\"18000\" />\r\n      <workItem from=\"1633317559545\" duration=\"30000\" />\r\n      <workItem from=\"1633325531223\" duration=\"8240000\" />\r\n      <workItem from=\"1633333816201\" duration=\"5401000\" />\r\n      <workItem from=\"1633411200652\" duration=\"2828000\" />\r\n    </task>\r\n    <servers />\r\n  </component>\r\n  <component name=\"TypeScriptGeneratedFilesManager\">\r\n    <option name=\"version\" value=\"3\" />\r\n  </component>\r\n  <component name=\"Vcs.Log.Tabs.Properties\">\r\n    <option name=\"TAB_STATES\">\r\n      <map>\r\n        <entry key=\"MAIN\">\r\n          <value>\r\n            <State />\r\n          </value>\r\n        </entry>\r\n      </map>\r\n    </option>\r\n    <option name=\"oldMeFiltersMigrated\" value=\"true\" />\r\n  </component>\r\n  <component name=\"com.intellij.coverage.CoverageDataManagerImpl\">\r\n    <SUITE FILE_PATH=\"coverage/couples$export_graph.coverage\" NAME=\"export_graph Coverage Results\" MODIFIED=\"1633331053632\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$\" />\r\n    <SUITE FILE_PATH=\"coverage/couples$Unittests_for_test_reader_ReaderTest_test_read_input.coverage\" NAME=\"Unittests for test_reader.ReaderTest.test_read_input Coverage Results\" MODIFIED=\"1631863018179\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/tests\" />\r\n    <SUITE FILE_PATH=\"coverage/couples$Unittests_for_test_increment_IncrementTest_test_increment.coverage\" NAME=\"Unittests for test_increment.IncrementTest.test_increment Coverage Results\" MODIFIED=\"1632389893613\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/tests\" />\r\n    <SUITE FILE_PATH=\"coverage/couples$Unittests_for_test_graph_MyTestCase_test_guide.coverage\" NAME=\"Unittests for test_graph.MyTestCase.test_guide Coverage Results\" MODIFIED=\"1632645454691\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/tests\" />\r\n    <SUITE FILE_PATH=\"coverage/couples$Unittests_for_test_increment_IncrementTest_test_sort_coocc.coverage\" NAME=\"Unittests for test_increment.IncrementTest.test_sort_coocc Coverage Results\" MODIFIED=\"1632020723705\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/tests\" />\r\n    <SUITE FILE_PATH=\"coverage/couples$Unittests_for_test_reader_ReaderTest.coverage\" NAME=\"Unittests for test_reader.ReaderTest Coverage Results\" MODIFIED=\"1631864211732\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/tests\" />\r\n    <SUITE FILE_PATH=\"coverage/couples$Unittests_for_reader_MyTestCase.coverage\" NAME=\"Unittests for reader.MyTestCase Coverage Results\" MODIFIED=\"1631861903184\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/test\" />\r\n    <SUITE FILE_PATH=\"coverage/couples$Unittests_for_test_reader_ReaderTest_test_get_files_coocc.coverage\" NAME=\"Unittests for test_reader.ReaderTest.test_get_files_coocc Coverage Results\" MODIFIED=\"1631864205129\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/tests\" />\r\n    <SUITE FILE_PATH=\"coverage/couples$Unittests_for_test_reader_MyTestCase.coverage\" NAME=\"Unittests for test_reader.MyTestCase Coverage Results\" MODIFIED=\"1631862080853\" SOURCE_PROVIDER=\"com.intellij.coverage.DefaultCoverageFileProvider\" RUNNER=\"coverage.py\" COVERAGE_BY_TEST_ENABLED=\"true\" COVERAGE_TRACING_ENABLED=\"false\" WORKING_DIRECTORY=\"$PROJECT_DIR$/tests\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision e3b74bcb2f2c8d27247ef9c629351b35be01a2ed)
++++ b/.idea/workspace.xml	(date 1633933601116)
+@@ -2,8 +2,12 @@
+ <project version="4">
+   <component name="ChangeListManager">
+     <list default="true" id="6734fdcb-a0a8-4e76-9045-751b4616ac47" name="Default Changelist" comment="">
++      <change beforePath="$PROJECT_DIR$/.idea/couples.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/couples.iml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+       <change beforePath="$PROJECT_DIR$/increment.py" beforeDir="false" afterPath="$PROJECT_DIR$/increment.py" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/tests/resource/test_repo" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/tests/test_increment.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_increment.py" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+@@ -40,9 +44,9 @@
+     <property name="node.js.path.for.package.tslint" value="project" />
+     <property name="node.js.selected.package.eslint" value="(autodetect)" />
+     <property name="node.js.selected.package.tslint" value="(autodetect)" />
+-    <property name="settings.editor.selected.configurable" value="preferences.lookFeel" />
++    <property name="settings.editor.selected.configurable" value="project.propVCSSupport.Mappings" />
+   </component>
+-  <component name="RunManager" selected="Python.export_graph">
++  <component name="RunManager" selected="Python tests.Unittests for test_increment.IncrementTest.test_increment">
+     <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+       <module name="couples" />
+       <option name="INTERPRETER_OPTIONS" value="" />
+@@ -149,9 +153,9 @@
+     </configuration>
+     <recent_temporary>
+       <list>
++        <item itemvalue="Python tests.Unittests for test_increment.IncrementTest.test_increment" />
+         <item itemvalue="Python.export_graph" />
+         <item itemvalue="Python tests.Unittests for test_graph.MyTestCase.test_guide" />
+-        <item itemvalue="Python tests.Unittests for test_increment.IncrementTest.test_increment" />
+         <item itemvalue="Python tests.Unittests for test_increment.IncrementTest.test_sort_coocc" />
+         <item itemvalue="Python tests.Unittests for test_reader.ReaderTest" />
+       </list>
+@@ -192,7 +196,9 @@
+       <workItem from="1633317559545" duration="30000" />
+       <workItem from="1633325531223" duration="8240000" />
+       <workItem from="1633333816201" duration="5401000" />
+-      <workItem from="1633411200652" duration="2828000" />
++      <workItem from="1633411200652" duration="3562000" />
++      <workItem from="1633583205004" duration="5972000" />
++      <workItem from="1633600060153" duration="10000" />
+     </task>
+     <servers />
+   </component>
+@@ -211,10 +217,15 @@
+     </option>
+     <option name="oldMeFiltersMigrated" value="true" />
+   </component>
++  <component name="VcsManagerConfiguration">
++    <ignored-roots>
++      <path value="$PROJECT_DIR$/tests/resource/test_repo" />
++    </ignored-roots>
++  </component>
+   <component name="com.intellij.coverage.CoverageDataManagerImpl">
+     <SUITE FILE_PATH="coverage/couples$export_graph.coverage" NAME="export_graph Coverage Results" MODIFIED="1633331053632" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+     <SUITE FILE_PATH="coverage/couples$Unittests_for_test_reader_ReaderTest_test_read_input.coverage" NAME="Unittests for test_reader.ReaderTest.test_read_input Coverage Results" MODIFIED="1631863018179" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+-    <SUITE FILE_PATH="coverage/couples$Unittests_for_test_increment_IncrementTest_test_increment.coverage" NAME="Unittests for test_increment.IncrementTest.test_increment Coverage Results" MODIFIED="1632389893613" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
++    <SUITE FILE_PATH="coverage/couples$Unittests_for_test_increment_IncrementTest_test_increment.coverage" NAME="Unittests for test_increment.IncrementTest.test_increment Coverage Results" MODIFIED="1633599961361" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+     <SUITE FILE_PATH="coverage/couples$Unittests_for_test_graph_MyTestCase_test_guide.coverage" NAME="Unittests for test_graph.MyTestCase.test_guide Coverage Results" MODIFIED="1632645454691" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+     <SUITE FILE_PATH="coverage/couples$Unittests_for_test_increment_IncrementTest_test_sort_coocc.coverage" NAME="Unittests for test_increment.IncrementTest.test_sort_coocc Coverage Results" MODIFIED="1632020723705" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+     <SUITE FILE_PATH="coverage/couples$Unittests_for_test_reader_ReaderTest.coverage" NAME="Unittests for test_reader.ReaderTest Coverage Results" MODIFIED="1631864211732" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/tests" />
+Index: .idea/vcs.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"VcsDirectoryMappings\">\r\n    <mapping directory=\"$PROJECT_DIR$\" vcs=\"Git\" />\r\n    <mapping directory=\"$PROJECT_DIR$/tests/resource/test_repo\" vcs=\"Git\" />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/vcs.xml b/.idea/vcs.xml
+--- a/.idea/vcs.xml	(revision e3b74bcb2f2c8d27247ef9c629351b35be01a2ed)
++++ b/.idea/vcs.xml	(date 1633584958277)
+@@ -2,6 +2,6 @@
+ <project version="4">
+   <component name="VcsDirectoryMappings">
+     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+-    <mapping directory="$PROJECT_DIR$/tests/resource/test_repo" vcs="Git" />
++    <mapping directory="$PROJECT_DIR$/tests/resource/repo4test" vcs="Git" />
+   </component>
+ </project>
+\ No newline at end of file
+Index: .idea/couples.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<module type=\"PYTHON_MODULE\" version=\"4\">\r\n  <component name=\"NewModuleRootManager\">\r\n    <content url=\"file://$MODULE_DIR$\">\r\n      <excludeFolder url=\"file://$MODULE_DIR$/venv\" />\r\n    </content>\r\n    <orderEntry type=\"jdk\" jdkName=\"Python 3.9 (couples)\" jdkType=\"Python SDK\" />\r\n    <orderEntry type=\"sourceFolder\" forTests=\"false\" />\r\n  </component>\r\n</module>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/couples.iml b/.idea/couples.iml
+--- a/.idea/couples.iml	(revision e3b74bcb2f2c8d27247ef9c629351b35be01a2ed)
++++ b/.idea/couples.iml	(date 1633428534283)
+@@ -7,4 +7,8 @@
+     <orderEntry type="jdk" jdkName="Python 3.9 (couples)" jdkType="Python SDK" />
+     <orderEntry type="sourceFolder" forTests="false" />
+   </component>
++  <component name="PyDocumentationSettings">
++    <option name="format" value="NUMPY" />
++    <option name="myDocStringFormat" value="NumPy" />
++  </component>
+ </module>
+\ No newline at end of file
