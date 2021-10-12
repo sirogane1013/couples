@@ -1,6 +1,7 @@
 import git
 
 from graph import Graph
+from util.git import get_modified
 
 
 def leave_one_out(commit: git.Commit, graph: Graph):
@@ -71,11 +72,6 @@ def calc_metrics(details, feedback):
     mrr = m / (len(details) * feedback)
     recall = r / len(details)
     return mrr, recall
-
-
-def get_modified(commit: git.Commit):
-    diffs = commit.parents[0].diff(commit)
-    return [d.a_path for d in diffs if d.change_type == 'M']
 
 
 class TooSmallCommitException(Exception):

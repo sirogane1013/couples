@@ -9,8 +9,9 @@ import scipy
 from tqdm import tqdm
 from networkx.readwrite import json_graph
 
-from increment import increment, get_child
+from increment import increment
 from reader import read_input
+from util.git import find_child
 
 
 def parse_args():
@@ -66,7 +67,7 @@ def main():
                 index = pickle.load(f)
             with open(path + "/matrix.npz", mode='rb') as f:
                 coocc = scipy.sparse.load_npz(f)
-            commit = get_child(repo, hexsha)
+            commit = find_child(repo, hexsha)
             hexsha = commit.hexsha
 
 

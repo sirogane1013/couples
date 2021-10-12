@@ -4,10 +4,12 @@ from typing import List
 import git
 from scipy.sparse import csr_matrix, coo_matrix
 
+from util.git import find_child
+
 
 def increment(repo: git.Repo, origin_hex: str, index: List[str], coocc: csr_matrix) \
         -> (List[str], csr_matrix, str):
-    child = get_child(repo, origin_hex)
+    child = find_child(repo, origin_hex)
     diffs = child.parents[0].diff(child)
     hexsha = child.hexsha
 
