@@ -21,7 +21,7 @@ def parse_args():
         help="Path to data directory."
     )
     parser.add_argument(
-        "-h", "--hexsha", type=str, default="HEAD",
+        "--hexsha", type=str, default="HEAD",
         help="Commit hash of the project where experiment starts."
     )
     parser.add_argument(
@@ -47,7 +47,7 @@ def main():
     m = 0
     r = 0
     for _ in tqdm(range(args.iteration)):
-        with open(args.data + "/" + target_com.hexsha + "/index.pkl", mode='rb') as f:
+        with open(args.data + "/" + parent_com.hexsha + "/index.pkl", mode='rb') as f:
             index = pickle.load(f)
         with open(args.data + "/" + parent_com.hexsha + "/matrix.npz", mode='rb') as f:
             coocc = scipy.sparse.load_npz(f)

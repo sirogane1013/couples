@@ -60,7 +60,7 @@ def leave_one_out(commit: git.Commit, graph: Graph):
     return hexsha, mrr, recall, feedback, details
 
 
-def calc_metrics(details: list[dict[str, int]], feedback: float):
+def calc_metrics(details, feedback):
     m = 0
     r = 0
     for detail in details:
