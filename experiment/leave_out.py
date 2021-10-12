@@ -3,7 +3,7 @@ import git
 from graph import Graph
 
 
-def leave_one_out(commit: git.Commit, graph: Graph) -> tuple[str, float, float, float, list[dict[str, int]]]:
+def leave_one_out(commit: git.Commit, graph: Graph):
     """
     Parameters
     ----------
@@ -60,7 +60,7 @@ def leave_one_out(commit: git.Commit, graph: Graph) -> tuple[str, float, float, 
     return hexsha, mrr, recall, feedback, details
 
 
-def calc_metrics(details: list[dict[str, int]], feedback: float) -> (float, float):
+def calc_metrics(details: list[dict[str, int]], feedback: float):
     m = 0
     r = 0
     for detail in details:
@@ -73,7 +73,7 @@ def calc_metrics(details: list[dict[str, int]], feedback: float) -> (float, floa
     return mrr, recall
 
 
-def get_modified(commit: git.Commit) -> list[str]:
+def get_modified(commit: git.Commit):
     diffs = commit.parents[0].diff(commit)
     return [d.a_path for d in diffs if d.change_type == 'M']
 

@@ -7,7 +7,7 @@ import scipy
 from tqdm import tqdm
 
 from graph import Graph
-from leave_out import leave_one_out, TooSmallCommitException
+from .leave_out import leave_one_out, TooSmallCommitException
 
 
 def parse_args():
@@ -29,7 +29,7 @@ def parse_args():
         help="Number of commits to perform the experiment."
     )
     parser.add_argument(
-        "-o", "--output", type=int, default="result.json",
+        "-o", "--output", type=str, default="result.json",
         help="File name of output json."
     )
     args = parser.parse_args()
@@ -39,20 +39,21 @@ def parse_args():
 def main():
     args = parse_args()
     repo = git.Repo(args.repository)
-    com = repo.commit(args.hexsha)
+    target_com = repo.commit(args.hexsha)
+    parent_com = target_com.parents[0]
     results = []
     C = 0
     Cstar = 0
     m = 0
     r = 0
     for _ in tqdm(range(args.iteration)):
-        with open(args.data + "/" + com.hexsha + "/index.pkl", mode='rb') as f:
+        with open(args.data + "/" + target_com.hexsha + "/index.pkl", mode='rb') as f:
             index = pickle.load(f)
-        with open(args.data + "/" + com.hexsha + "'/matrix.npz", mode='rb') as f:
+        with open(args.data + "/" + parent_com.hexsha + "/matrix.npz", mode='rb') as f:
             coocc = scipy.sparse.load_npz(f)
         g = Graph(index, coocc)
         try:
-            hexsha, mrr, recall, feedback, detail = leave_one_out(com, g)
+            hexsha, mrr, recall, feedback, detail = leave_one_out(target_com, g)
             results.append({
                 "hash": hexsha,
                 "mrr": mrr,
@@ -67,6 +68,8 @@ def main():
                 Cstar += 1
         except TooSmallCommitException:
             pass
+        target_com = target_com.parents[0]
+        parent_com = parent_com.parents[0]
 
     mrr_t = m / C
     recall_t = r / C
@@ -76,15 +79,15 @@ def main():
         "used_commits": C,
         "results": results,
     }
-    with open(args.output) as f:
+    with open(args.output, "w") as f:
         json.dump(result_t, f)
 
 
 def print_result(result):
     print(
-        "MRR: {}"
-        "Recall: {}"
-        "Number of Used Commits: {}".format(result["mrr_total"], result["recall_total"], result["used_commits"])
+        "MRR: {}\n"
+        "Recall: {}\n"
+        "Number of Used Commits: {}\n".format(result["mrr_total"], result["recall_total"], result["used_commits"])
     )
 
 
