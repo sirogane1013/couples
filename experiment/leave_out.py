@@ -4,7 +4,7 @@ from graph import Graph
 from util.git import get_modified
 
 
-def leave_one_out(commit: git.Commit, graph: Graph):
+def leave_one_out(commit: git.Commit, graph: Graph, cutoff: float):
     """
     Parameters
     ----------
@@ -12,6 +12,8 @@ def leave_one_out(commit: git.Commit, graph: Graph):
         Commit Object
     graph: Graph
         Coocc Graph
+    cutoff: float
+        metrics cutoff
 
     Returns
     -------
@@ -43,7 +45,7 @@ def leave_one_out(commit: git.Commit, graph: Graph):
         modified.append(modified.pop(0))
         target = modified[0]
         query = modified[1:]
-        answer = graph.guide(query)
+        answer = graph.guide(query, cutoff)
         if len(answer) > 0:
             f += 1
         if target in answer:

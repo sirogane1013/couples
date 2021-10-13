@@ -1,12 +1,13 @@
 import argparse
 import json
 import pickle
+from typing import Union
 
 import git
 import scipy
 from tqdm import tqdm
 
-from graph import Graph
+from graph import Graph, GraphType
 from .leave_out import leave_one_out, TooSmallCommitException
 
 
@@ -32,6 +33,14 @@ def parse_args():
         "-o", "--output", type=str, default="result.json",
         help="File name of output json."
     )
+    parser.add_argument(
+        "-t", "--type", type=GraphType, choices=list(GraphType), default=GraphType.BASIC,
+        help="Graph Type"
+    )
+    parser.add_argument(
+        "-c", "--cutoff", type=Union[int, float], default=2,
+        help="cutoff"
+    )
     args = parser.parse_args()
     return args
 
@@ -51,9 +60,9 @@ def main():
             index = pickle.load(f)
         with open(args.data + "/" + parent_com.hexsha + "/matrix.npz", mode='rb') as f:
             coocc = scipy.sparse.load_npz(f)
-        g = Graph(index, coocc)
+        g = Graph(index, coocc, args.type)
         try:
-            hexsha, mrr, recall, feedback, detail = leave_one_out(target_com, g)
+            hexsha, mrr, recall, feedback, detail = leave_one_out(target_com, g, args.cutoff)
             results.append({
                 "hash": hexsha,
                 "mrr": mrr,
